@@ -41,21 +41,21 @@ class Bilaplacian:
             Finite element discritization of the space
         mean : dolfinx.fem.Function, default: ``0``
             Mean of the distribution.
-        R:
+        R: LinearOperator
             Operator for the underlying covariance matrix.
-        Rinv:
+        Rinv: LinearOperator
             Operator for the underlying precision matrix
-        A:
+        A: scipy.sparse.sparray
             Discretization of bi-Laplacian operator
-        Ainv:
-            Factorized linear operator representing $A^{-1}$.
-        M:
+        Ainv: LinearOperator
+            Facotrized linear operator representing $A^{-1}$.
+        M: scipy.sparse.sparray
             Discretization of underling mass matrix
-        Minv:
+        Minv: scipy.sparse.sparray
             Operator representing $M^{-1}$.
-        sqrtM:
+        sqrtM: scipy.sparse.sparray
             Matrix square root of M
-        sqrtMinv:
+        sqrtMinv: scipy.sparse.sparray
             Inverse for matrix square root of M
 
         Methods
@@ -167,18 +167,27 @@ if __name__ == "__main__":
     N_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
     G_pr = Bilaplacian(V, 1.0, 1.0, robin_bc=True)
 
+    np.random.seed(1)
     samples = [G_pr.sample(np.random.randn(N_dofs)) for _ in range(3)]
-    vmax, vmin = samples.max(), samples.min()
+    vmax, vmin = np.max(samples), np.min(samples)
 
-    pl = pv.Plotter(shape=(1, 3))
+    pl = pv.Plotter(shape=(1, 3), off_screen=True)
 
     for i, s in enumerate(samples):
         pl.subplot(0, i)
-        pl.add_mesh(V, scalars=s, shading="gouraud", clim=[vmin, vmax])
+        topology, cell_types, geometry = dolfinx.plot.vtk_mesh(V)
+        grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+        pl.add_mesh(grid, scalars=s, clim=[vmin, vmax], cmap="inferno")
         pl.camera_position = "xy"  # Set camera to a top down view.
         pl.enable_parallel_projection()  # removes perspective distortion
-        pl.remove_axes()  # cleaner view
+        pl.remove_scalar_bar()  # cleaner view
         pl.background_color = "white"  # set background color to white for transparency.
+        pl.zoom_camera(3)
 
     pl.link_views()  # link the camera views together.
-    pl.show(screenshot="samples.png", window_size=(1800, 600))
+    pl.screenshot(
+        filename="samples.png",
+        scale=2,
+        transparent_background=True,
+        window_size=(1800, 600),
+    )
