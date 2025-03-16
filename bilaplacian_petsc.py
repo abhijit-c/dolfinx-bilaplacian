@@ -111,12 +111,10 @@ class Bilaplacian:
 
         self._helper1 = self.M.createVecLeft()
         self._helper2 = self.M.createVecLeft()
-        self._helper3 = self.M.createVecLeft()
 
     def _zero_helpers(self):
         self._helper1.zeroEntries()
         self._helper2.zeroEntries()
-        self._helper3.zeroEntries()
 
     def R(self, x: PETSc.Vec, out: PETSc.Vec | None = None) -> PETSc.Vec:
         self._zero_helpers()
